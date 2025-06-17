@@ -1,0 +1,26 @@
+name: Deploy
+
+on:
+  push:
+    branches: ["main"]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+
+      # Configure AWS credentials via OIDC
+      - uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_OIDC_ROLE }}
+          aws-region: eu-west-1
+
+      - name: Terraform Init & Apply
+        run: |
+          cd infra
+          terraform init -input=false
+          terraform apply -auto-approve -input=false -var="region=eu-west-1"

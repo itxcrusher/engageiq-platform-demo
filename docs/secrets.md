@@ -1,0 +1,1 @@
+List of environment variables and AWS Secrets Manager keys required.

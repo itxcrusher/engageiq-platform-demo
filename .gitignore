@@ -1,0 +1,52 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.so
+
+# Environment
+.env
+.env.*
+*.env
+!.env.example
+
+# Virtual environments
+.venv/
+venv/
+env/
+
+# Python test files
+.coverage
+.tox/
+.nox/
+pytest_cache/
+.cache/
+*.log
+
+# AWS & Terraform
+.terraform/
+.terraform.lock.hcl
+terraform.tfstate
+terraform.tfstate.*
+crash.log
+*.tfvars
+
+# IDEs
+.vscode/
+.idea/
+*.swp
+.DS_Store
+
+# Build
+dist/
+build/
+*.egg-info/
+
+# Node (if frontend grows)
+node_modules/
+
+# Output & artifacts
+*.zip
+*.tar.gz
+__outputs__/
