@@ -24,7 +24,7 @@ data "aws_iam_policy_document" "github_oidc_assume" {
     condition {
       test     = "StringEquals"
       variable = "token.actions.githubusercontent.com:sub"
-      values   = ["repo:your-github-username/engageiq-platform-demo:ref:refs/heads/main"]
+      values   = ["repo:itxcrusher/engageiq-platform-demo:ref:refs/heads/main"]
     }
 
     condition {
