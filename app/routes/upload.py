@@ -1,9 +1,22 @@
-from fastapi import APIRouter, Depends, Request
-from app.auth import get_current_user
+import boto3
+import os
+from fastapi import APIRouter, UploadFile, File, Depends
+import uuid
 
 router = APIRouter()
 
+s3 = boto3.client("s3", region_name=os.getenv("REGION", "eu-west-1"))
+bucket = os.getenv("S3_BUCKET", "engageiq-demo-bucket-hassaan")
+
+def get_current_user():
+    return {"user_id": "demo-user"}
+
 @router.post("/upload-file")
-async def upload_file(request: Request, _=Depends(get_current_user)):
-    # Would normally return a signed S3 URL
-    return {"upload_url": "https://signed-url.example.com", "org": request.state.org_id}
+def upload_file(file: UploadFile = File(...), user=Depends(get_current_user)):
+    key = f"{user['org_id']}/{uuid.uuid4()}-{file.filename}"
+    url = s3.generate_presigned_url(
+        ClientMethod="put_object",
+        Params={"Bucket": bucket, "Key": key, "ContentType": file.content_type},
+        ExpiresIn=300,
+    )
+    return {"upload_url": url, "key": key}

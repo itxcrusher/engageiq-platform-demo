@@ -1,21 +1,13 @@
-from fastapi import Request, HTTPException
-from jose import jwt
-import logging, os
+from fastapi import Depends, HTTPException, status
+from fastapi.security import OAuth2PasswordBearer
 
-REGION = os.getenv("REGION", "eu-west-1")
-COGNITO_POOL_ID = os.getenv("COGNITO_POOL_ID", "placeholder")
-COGNITO_ISSUER = f"https://cognito-idp.{REGION}.amazonaws.com/{COGNITO_POOL_ID}"
-JWKS_URL = f"{COGNITO_ISSUER}/.well-known/jwks.json"
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
 
-async def get_current_user(request: Request):
-    token = request.headers.get("authorization", "").replace("Bearer ", "")
-    if not token:
-        raise HTTPException(status_code=401, detail="Missing token")
-    try:
-        # NOTE: Token verification omitted for brevity in demo
-        claims = jwt.get_unverified_claims(token)
-        request.state.org_id = claims.get("custom:org_id", "unknown")
-        request.state.user_id = claims.get("sub")
-    except Exception as e:
-        logging.exception("Token parsing failed")
-        raise HTTPException(status_code=401, detail="Invalid token")
+def get_current_user(token: str = Depends(oauth2_scheme)):
+    # Mock token handling (replace with Cognito later)
+    if not token or token != "demo-token":
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid authentication credentials",
+        )
+    return {"user_id": "user123", "org_id": "org123"}
