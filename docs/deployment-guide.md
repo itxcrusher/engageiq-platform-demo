@@ -1,1 +1,0 @@
-Steps to deploy using GitHub Actions or locally with Terraform.

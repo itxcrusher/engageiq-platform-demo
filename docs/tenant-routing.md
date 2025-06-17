@@ -1,1 +1,0 @@
-Describe how org_id and user_id are extracted and enforced.

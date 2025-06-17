@@ -145,7 +145,7 @@
     function renderHistory(messages, currentUser = null) {
       const historyEl = document.getElementById("history");
       historyEl.innerHTML = "";
-      messages.forEach(msg => {
+      messages.slice().reverse().forEach(msg => {
         const li = document.createElement("li");
         const time = new Date(msg.timestamp).toLocaleTimeString();
         const user = msg.user || currentUser || "Anonymous";
