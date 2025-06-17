@@ -1,16 +1,15 @@
-# 1. Get account ID
+# ── Account ID (used only for reference) ────────────────────────────────────────
 data "aws_caller_identity" "current" {}
 
-# 2. Create GitHub OIDC provider
+# ── 1. OIDC provider for GitHub Actions ────────────────────────────────────────
 resource "aws_iam_openid_connect_provider" "github" {
   url = "https://token.actions.githubusercontent.com"
 
-  client_id_list = ["sts.amazonaws.com"]
-
-  thumbprint_list = ["6938fd4d98bab03faadb97b34396831e3780aea1"] # GitHub’s root cert
+  client_id_list  = ["sts.amazonaws.com"]
+  thumbprint_list = ["6938fd4d98bab03faadb97b34396831e3780aea1"] # LE ISRG Root X1
 }
 
-# 3. Trust policy to allow GitHub to assume the role
+# ── 2. Trust-policy document for the role GitHub will assume ───────────────────
 data "aws_iam_policy_document" "github_oidc_assume" {
   statement {
     actions = ["sts:AssumeRoleWithWebIdentity"]
@@ -21,12 +20,16 @@ data "aws_iam_policy_document" "github_oidc_assume" {
       identifiers = [aws_iam_openid_connect_provider.github.arn]
     }
 
+    # Match repo and branch exactly (replace user/org & branch if different)
     condition {
       test     = "StringEquals"
       variable = "token.actions.githubusercontent.com:sub"
-      values   = ["repo:itxcrusher/engageiq-platform-demo:ref:refs/heads/main"]
+      values   = [
+        "repo:itxcrusher/engageiq-platform-demo:ref:refs/heads/main"
+      ]
     }
 
+    # GitHub always sets aud=sts.amazonaws.com
     condition {
       test     = "StringEquals"
       variable = "token.actions.githubusercontent.com:aud"
@@ -35,19 +38,21 @@ data "aws_iam_policy_document" "github_oidc_assume" {
   }
 }
 
-# 4. Role to be assumed by GitHub Actions
+# ── 3. IAM role GitHub will assume ─────────────────────────────────────────────
 resource "aws_iam_role" "github_oidc_role" {
   name               = "github-actions-deploy-engageiq"
   assume_role_policy = data.aws_iam_policy_document.github_oidc_assume.json
 }
 
-# 5. Attach policies
-resource "aws_iam_role_policy_attachment" "ecr_push_policy" {
+# ── 4. Permissions the workflow actually needs ─────────────────────────────────
+# Push & pull from ECR
+resource "aws_iam_role_policy_attachment" "ecr_poweruser" {
   role       = aws_iam_role.github_oidc_role.name
   policy_arn = "arn:aws:iam::aws:policy/AmazonEC2ContainerRegistryPowerUser"
 }
 
-resource "aws_iam_role_policy_attachment" "app_runner_deploy" {
+# Deploy to App Runner
+resource "aws_iam_role_policy_attachment" "apprunner_full" {
   role       = aws_iam_role.github_oidc_role.name
   policy_arn = "arn:aws:iam::aws:policy/AWSAppRunnerFullAccess"
 }
