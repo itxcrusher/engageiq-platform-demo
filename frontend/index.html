@@ -1,8 +1,65 @@
-<!doctype html>
-<html lang="en">
-  <head><meta charset="utf-8"><title>EngageIQ Demo</title></head>
-  <body>
+<!DOCTYPE html>
+<html>
+<head>
+  <title>EngageIQ Chat Demo</title>
+  <meta charset="UTF-8" />
+</head>
+<body>
+  <center>
     <h1>EngageIQ Demo Frontend</h1>
     <p>If you can see this via CloudFront, static hosting works 🎉</p>
-  </body>
+  </center>
+
+  <label for="question">Ask a question:</label><br>
+  <input type="text" id="question" placeholder="Type your question here">
+  <button onclick="submitQuestion()">Send</button>
+
+  <h3>Chat Response:</h3>
+  <pre id="response"></pre>
+
+  <h3>Chat History:</h3>
+  <pre id="history"></pre>
+
+  <h3>Upload a File:</h3>
+  <input type="file" id="fileInput">
+  <button onclick="uploadFile()">Upload</button>
+  <pre id="uploadResult"></pre>
+
+  <script>
+    const BASE_URL = "https://gs26kmpe38.eu-west-1.awsapprunner.com/api";
+
+    async function submitQuestion() {
+      const question = document.getElementById("question").value;
+      const res = await fetch(`${BASE_URL}/chat`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ org_id: "demo-org", message: question })
+      });
+      const data = await res.json();
+      document.getElementById("response").textContent = JSON.stringify(data, null, 2);
+      loadHistory(); // auto-refresh history
+    }
+
+    async function loadHistory() {
+      const res = await fetch(`${BASE_URL}/chat-history`);
+      const data = await res.json();
+      document.getElementById("history").textContent = JSON.stringify(data, null, 2);
+    }
+
+    async function uploadFile() {
+      const file = document.getElementById("fileInput").files[0];
+      const formData = new FormData();
+      formData.append("file", file);
+
+      const res = await fetch(`${BASE_URL}/upload-file`, {
+        method: "POST",
+        body: formData
+      });
+      const data = await res.json();
+      document.getElementById("uploadResult").textContent = JSON.stringify(data, null, 2);
+    }
+
+    loadHistory();
+  </script>
+</body>
 </html>

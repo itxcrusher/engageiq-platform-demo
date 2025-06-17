@@ -1,10 +1,15 @@
 from fastapi import APIRouter, Depends
 from app.auth import get_current_user
+from app.routes.chat import TENANT_MEMORY
 
 router = APIRouter()
 
-@router.get("/get-chat-history")
+@router.get("/chat-history")
 def get_chat_history(user=Depends(get_current_user)):
-    pk = f"ORG#{user['org_id']}#USER#{user['user_id']}"
-    resp = table.query(KeyConditionExpression="PK = :pk", ExpressionAttributeValues={":pk": pk})
-    return {"messages": resp.get("Items", [])}
+    org_id = user["org_id"]
+    history = TENANT_MEMORY.get(org_id, [])
+    return {
+        "org_id": org_id,
+        "history_count": len(history),
+        "messages": history
+    }

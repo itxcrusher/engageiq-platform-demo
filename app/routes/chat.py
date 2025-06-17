@@ -1,17 +1,30 @@
-from fastapi import APIRouter, Depends
-from app.auth import get_current_user
-import boto3
-import os
+from fastapi import APIRouter
+from pydantic import BaseModel
 from datetime import datetime
 
 router = APIRouter()
 
-dynamo = boto3.resource("dynamodb", region_name=os.getenv("REGION", "eu-west-1"))
-table = dynamo.Table(os.getenv("DYNAMODB_TABLE", "engageiq-chat-demo"))
+# Simulated per-tenant memory (will reset on app restart)
+TENANT_MEMORY = {}
 
-@router.post("/submit-question")
-def submit_question(payload: dict, user=Depends(get_current_user)):
-    pk = f"ORG#{user['org_id']}#USER#{user['user_id']}"
-    sk = f"MSG#{datetime.utcnow().isoformat()}"
-    table.put_item(Item={"PK": pk, "SK": sk, "question": payload["question"]})
-    return {"status": "saved", "org": user["org_id"], "user": user["user_id"]}
+class ChatPayload(BaseModel):
+    org_id: str
+    message: str
+
+@router.post("/chat")
+def chat(payload: ChatPayload):
+    org = payload.org_id
+    msg = payload.message
+
+    if org not in TENANT_MEMORY:
+        TENANT_MEMORY[org] = []
+    TENANT_MEMORY[org].append({"timestamp": datetime.utcnow().isoformat(), "message": msg})
+
+    # Simulated AI response
+    reply = f"Hi {org.upper()}! You asked: '{msg}'. Here's a demo response."
+
+    return {
+        "org_id": org,
+        "response": reply,
+        "message_history": TENANT_MEMORY[org]
+    }
