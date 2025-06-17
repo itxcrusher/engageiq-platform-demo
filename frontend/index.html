@@ -1,53 +1,162 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-  <title>EngageIQ Chat Demo</title>
   <meta charset="UTF-8" />
+  <title>EngageIQ Chat Demo</title>
+  <style>
+    body {
+      font-family: "Segoe UI", sans-serif;
+      background: #f4f6f8;
+      margin: 0;
+      padding: 30px;
+      color: #333;
+    }
+
+    .container {
+      max-width: 800px;
+      margin: auto;
+      background: #fff;
+      padding: 30px;
+      border-radius: 10px;
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
+    }
+
+    h1, h2 {
+      text-align: center;
+      color: #2c3e50;
+    }
+
+    input[type="text"], input[type="file"] {
+      width: 100%;
+      padding: 12px;
+      margin: 10px 0;
+      border: 1px solid #ccc;
+      border-radius: 6px;
+      font-size: 16px;
+    }
+
+    button {
+      background-color: #007bff;
+      color: white;
+      padding: 10px 20px;
+      margin-top: 10px;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 16px;
+    }
+
+    button:hover {
+      background-color: #0056b3;
+    }
+
+    .section {
+      margin-top: 30px;
+    }
+
+    pre {
+      background: #f0f0f0;
+      padding: 12px;
+      border-left: 4px solid #007bff;
+      overflow-x: auto;
+      border-radius: 4px;
+      white-space: pre-wrap;
+      word-wrap: break-word;
+    }
+
+    ul {
+      list-style: none;
+      padding-left: 0;
+    }
+
+    li {
+      padding: 5px 0;
+    }
+
+    .label {
+      font-weight: bold;
+    }
+
+  </style>
 </head>
 <body>
-  <center>
-    <h1>EngageIQ Demo Frontend</h1>
-    <p>If you can see this via CloudFront, static hosting works 🎉</p>
-  </center>
+  <div class="container">
+    <h1>🚀 EngageIQ Demo Frontend</h1>
+    <p style="text-align:center; color: #666;">If you see this via CloudFront, static hosting works 🎉</p>
 
-  <label for="question">Ask a question:</label><br>
-  <input type="text" id="question" placeholder="Type your question here">
-  <button onclick="submitQuestion()">Send</button>
+    <div class="section">
+      <h2>💬 Chat</h2>
+      <label for="name" class="label">Your name:</label>
+      <input type="text" id="name" placeholder="e.g. Alice" />
 
-  <h3>Chat Response:</h3>
-  <pre id="response"></pre>
+      <label for="question" class="label">Ask a question:</label>
+      <input type="text" id="question" placeholder="Type something smart..." />
+      <button onclick="submitQuestion()">Send</button>
+    </div>
 
-  <h3>Chat History:</h3>
-  <pre id="history"></pre>
+    <div class="section">
+      <h3>📩 Latest Response:</h3>
+      <pre id="response">No response yet.</pre>
+    </div>
 
-  <h3>Upload a File:</h3>
-  <input type="file" id="fileInput">
-  <button onclick="uploadFile()">Upload</button>
-  <pre id="uploadResult"></pre>
+    <div class="section">
+      <h3>📜 Chat History:</h3>
+      <ul id="history"></ul>
+    </div>
+
+    <div class="section">
+      <h2>📤 Upload a File</h2>
+      <input type="file" id="fileInput" />
+      <button onclick="uploadFile()">Upload</button>
+      <pre id="uploadResult">No upload yet.</pre>
+    </div>
+  </div>
 
   <script>
     const BASE_URL = "https://gs26kmpe38.eu-west-1.awsapprunner.com/api";
 
     async function submitQuestion() {
       const question = document.getElementById("question").value;
+      const name = document.getElementById("name").value.trim();
+
+      if (!question || !name) return alert("Enter both your name and question.");
+
       const res = await fetch(`${BASE_URL}/chat`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ org_id: "demo-org", message: question })
+        body: JSON.stringify({ org_id: "demo-org", user_id: name, message: question })
       });
+
       const data = await res.json();
-      document.getElementById("response").textContent = JSON.stringify(data, null, 2);
-      loadHistory(); // auto-refresh history
+      document.getElementById("response").textContent = data.response;
+      document.getElementById("question").value = "";
+
+      if (data.message_history && data.message_history.length) {
+        renderHistory(data.message_history, name);
+      }
     }
 
     async function loadHistory() {
       const res = await fetch(`${BASE_URL}/chat-history`);
       const data = await res.json();
-      document.getElementById("history").textContent = JSON.stringify(data, null, 2);
+      renderHistory(data.messages || []);
+    }
+
+    function renderHistory(messages, currentUser = null) {
+      const historyEl = document.getElementById("history");
+      historyEl.innerHTML = "";
+      messages.forEach(msg => {
+        const li = document.createElement("li");
+        const time = new Date(msg.timestamp).toLocaleTimeString();
+        const user = msg.user || currentUser || "Anonymous";
+        li.textContent = `[${time}] ${user}: ${msg.message}`;
+        historyEl.appendChild(li);
+      });
     }
 
     async function uploadFile() {
       const file = document.getElementById("fileInput").files[0];
+      if (!file) return alert("Select a file first.");
       const formData = new FormData();
       formData.append("file", file);
 
@@ -55,8 +164,9 @@
         method: "POST",
         body: formData
       });
+
       const data = await res.json();
-      document.getElementById("uploadResult").textContent = JSON.stringify(data, null, 2);
+      document.getElementById("uploadResult").textContent = `Uploaded "${data.filename}"\n➡️ ${data.url}`;
     }
 
     loadHistory();
